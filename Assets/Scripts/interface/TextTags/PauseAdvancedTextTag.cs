@@ -7,9 +7,9 @@ namespace Game.Interface.Tags
     {
         public float time = 1f;
         
-        public override void LoadArgs(string raw, IReadOnlyDictionary<string, string> args)
+        public override void LoadArgs(string raw, AdvancedText.Args args)
         {
-            time = args.TryGetValue("time", out var timeStr) ? float.Parse(timeStr, CultureInfo.InvariantCulture) : time;
+            time = args.GetFloat("time", time);
         }
 
         public override float GetTypingPause()

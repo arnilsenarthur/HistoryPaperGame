@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,7 +23,7 @@ namespace Game.Interface
         {
             public int index;
             
-            public abstract void LoadArgs(string raw, IReadOnlyDictionary<string, string> args);
+            public abstract void LoadArgs(string raw, Args args);
             public virtual float GetTypingPause() => 0f;
 
             public virtual string GetOpeningPrefix() => null;
@@ -50,11 +51,61 @@ namespace Game.Interface
         #region Basic Classes
         public class TypingInfo
         {
-            public float[] typingTimes;
+            public CharTypingInfo[] typingTimes;
             public ITypingAnimation[] typingAnimations;
             public float totalTypingTime;
         }
+
+        public struct CharTypingInfo
+        {
+            public float start;
+            public float length;
+        }
         
+        public class Args : Dictionary<string, string>
+        {
+            public float GetFloat(string key, float fallback)
+            {
+                if (TryGetValue(key, out var value) && float.TryParse(value, NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out var result))
+                    return result;
+
+                return fallback;
+            }
+            
+            public int GetInt(string key, int fallback)
+            {
+                if (TryGetValue(key, out var value) && int.TryParse(value, NumberStyles.Integer,
+                        CultureInfo.InvariantCulture, out var result))
+                    return result;
+
+                return fallback;
+            }
+            
+            public bool GetBool(string key, bool fallback)
+            {
+                if (TryGetValue(key, out var value) && bool.TryParse(value, out var result))
+                    return result;
+
+                return fallback;
+            }
+            
+            public string GetString(string key, string fallback)
+            {
+                return TryGetValue(key, out var value) ? value : fallback;
+            }
+            
+            public T GetEnum<T>(string key, T fallback) where T : struct, Enum
+            {
+                if (TryGetValue(key, out var value) && Enum.TryParse(value, out T result))
+                    return result;
+
+                return fallback;
+            }
+        }
+        #endregion
+        
+        #region Internal Classes
         private class AdvancedTextPreprocessor : ITextPreprocessor
         {
             private const float TypingTimeDefault = 0.05f;
@@ -63,7 +114,7 @@ namespace Game.Interface
             private const float TypingTimeLineBreak = TypingTimeDefault * 10f;
             
             private delegate Tag Factory();
-            private static readonly Regex _TagRegex = new(@"\<(?<tag_name>\/?\w+)(?:\s*(?<arg_name>\w*)=(?:""(?<arg_value>[^""]*)""|(?<arg_value>[^\s]+)))*\>");
+            private static readonly Regex _TagRegex = new(@"\<(?<tag_name>\/?\w+)(?:\s*(?<arg_name>\w*)=(?:""(?<arg_value>[^""]*)""|(?<arg_value>[^\s>]*)))*\>");
             
             //Internal buffers
             private string _lastText;
@@ -91,42 +142,102 @@ namespace Game.Interface
                 //Results
                 var tagsToClose = new Stack<ClosableTag>();
                 var tagList = new List<Tag>();
-                var argsDict = new Dictionary<string, string>();
-
+                var argsDict = new Args();
+                var typingTimes = new List<CharTypingInfo>();
+                var typingAnimations = new List<ITypingAnimation>();
+                var typingMaxTime = 0f;
+               
                 //Parsing
                 var resultString = new StringBuilder();
                 var lastIndex = 0;
+                var baked = 0;
                 var offset = 0;
-                var discarded = 0;
-                
+                var pauseToAdd = 0f;
+                var lastTime = 0f;
+
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                void Discard()
+                void AddChar(char c)
                 {
-                    var tagOpen = false;
+                    var typingAnimation = default(ITypingAnimation);
+                    var multiplier = 1f;
+                    var typingTime = _GetTimeForChar(c);
+                                    
+                    for (var j = 0; j < tagsToClose.Count; j++)
+                    {
+                        var ctg = tagsToClose.ToArray()[j];
+                        typingAnimation = ctg.GetTypingAnimation() ?? typingAnimation;
+                        multiplier *= ctg.GetTypingSpeedMultiplier();
+                    }
+
+                    var start = lastTime + pauseToAdd;
+                    var length = typingTime * 1f / multiplier;
+                    lastTime = start + length;
+                                    
+                    typingTimes.Add(new CharTypingInfo{start = start, length = length});
+                    typingAnimations.Add(typingAnimation);
+                    typingMaxTime = Math.Max(typingMaxTime, lastTime);
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void BakeTag(int openIndex, int closeIndex, bool closed)
+                {
+                    var tag = resultString.ToString(openIndex, closeIndex - openIndex + 1);
                     
-                    for (var i = discarded; i < resultString.Length; i++)
+                    if (!closed)
+                    {
+                        for (var i = openIndex; i <= closeIndex; i++)
+                            AddChar(resultString[i]);
+
+                        return;
+                    }
+                    
+                    //For now, don't check if the tag is valid or not (the name, args, and if it's closable)  
+                    offset -= tag.Length;
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void Bake()
+                {
+                    var tagOpenIndex = -1;
+
+                    for (var i = baked; i < resultString.Length; i++)
                     {
                         var c = resultString[i];
                         switch (c)
                         {
                             case '<':
-                                tagOpen = true;
-                                offset--;
-                                break;
+                                if (tagOpenIndex != -1)
+                                    BakeTag(tagOpenIndex, i, false);
+                                tagOpenIndex = i;
+                                break;  
                             case '>':
-                                tagOpen = false;
-                                offset--;
+                                if (tagOpenIndex != -1)
+                                {
+                                    BakeTag(tagOpenIndex, i, true);
+                                    tagOpenIndex = -1;
+                                }
+                                else
+                                    AddChar(c);
                                 break;
                             default:
-                                if (tagOpen)
-                                    offset--;
-                                else if (i > 0 && char.IsSurrogatePair(resultString[i - 1], c))
-                                    offset--;
+                                if (tagOpenIndex == -1)
+                                {
+                                    if (i > 0 && char.IsSurrogatePair(resultString[i - 1], c))
+                                        offset--;
+                                    else
+                                        AddChar(c);
+                                }
                                 break;
                         }
                     }
                     
-                    discarded = resultString.Length;
+
+                    if (tagOpenIndex != -1)
+                    {
+                        BakeTag(tagOpenIndex, resultString.Length - 1, false);
+                    }
+                    
+                    baked = resultString.Length;
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -158,15 +269,17 @@ namespace Game.Interface
                         if (tagsToClose.Count <= 0 || tagsToClose.Peek().GetType() != factory().GetType())
                             continue;
 
-                        var ctg = tagsToClose.Pop();
+                        var ctg = tagsToClose.Peek();
                         
                         InsertText(ctg.GetClosingPrefix());
-                        Discard();
+                        Bake();
                         
                         var index = match.Index + offset;
                         offset -= match.Length;
                         
                         ctg.length = index - ctg.index;
+                        
+                        tagsToClose.Pop();
                         tagList.Add(ctg);
                         
                         InsertText(ctg.GetClosingSuffix());
@@ -184,13 +297,14 @@ namespace Game.Interface
                         var tg = factory();
                         
                         InsertText(tg.GetOpeningPrefix());
-                        Discard();
+                        Bake();
                         
                         var index = match.Index + offset;
                         offset -= match.Length;
                         
                         tg.index = index;
                         tg.LoadArgs(match.Value, argsDict);
+                        pauseToAdd += tg.GetTypingPause();
                         
                         if (tg is ClosableTag ctg)
                             tagsToClose.Push(ctg);
@@ -203,78 +317,15 @@ namespace Game.Interface
                 
                 //Finalize parsing data
                 resultString.Append(text, lastIndex, text.Length - lastIndex);
-                Discard();
+                Bake();
+                
+                //Save data
                 tags = tagList.ToArray();
-                
-                //Generating typing animation
-                var typingTimes = new float[text.Length + offset + 1];
-                var typingAnimations = new ITypingAnimation[text.Length + offset];
-                var typingTimesMultiplier = new float[text.Length + offset];
-                var typingTotalTime = 0f;
-                
-                //Pause times
-                foreach (var tg in tagList)
-                {
-                    var pause = tg.GetTypingPause();
-                    typingTimes[tg.index] += pause;
-                }
-                
-                //Calculate tag speed and animation influence
-                foreach (var tg in tagList)
-                {
-                    if (tg is not ClosableTag ctg)
-                        continue;
-                    
-                    //Animations
-                    var anim = ctg.GetTypingAnimation();
-                    if (anim != null)
-                        for (var i = ctg.index; i < ctg.index + ctg.length; i++)
-                            typingAnimations[i] = anim;
-                    
-                    //Speed Multiplier
-                    var tsm = ctg.GetTypingSpeedMultiplier();
-                    if (Math.Abs(tsm - 1f) > 0.001f)
-                        for (var i = ctg.index; i < ctg.index + ctg.length; i++)
-                            typingTimesMultiplier[i] = (typingTimesMultiplier[i] + 1) * (tsm / 1f) - 1f;
-                }
-
-                //Bake typing times
-                offset = 0;
-                var tagOpen = false;
-                
-                for (var i = 0; i < resultString.Length; i++)
-                {
-                    var c = resultString[i];
-                    switch (c)
-                    {
-                        case '<':
-                            tagOpen = true;
-                            offset--;
-                            break;
-                        case '>':
-                            tagOpen = false;
-                            offset--;
-                            break;
-                        default:
-                            if (tagOpen)
-                                offset--;
-                            else if (i > 0 && char.IsSurrogatePair(resultString[i - 1], c))
-                                offset--;
-                            else
-                            {
-                                var index = i + offset;
-                                typingTimes[index + 1] += typingTimes[index] + _GetTimeForChar(c) * (typingTimesMultiplier[index] + 1f);
-                                typingTotalTime = Math.Max(typingTotalTime, typingTimes[index + 1]);
-                            }
-                            break;
-                    }
-                }
-                
                 typingInfo = new TypingInfo
                 {
-                    typingTimes = typingTimes,
-                    totalTypingTime = typingTotalTime,
-                    typingAnimations = typingAnimations
+                    typingTimes = typingTimes.ToArray(),
+                    totalTypingTime = typingMaxTime,
+                    typingAnimations = typingAnimations.ToArray()
                 };
                 
                 _lastText = text;
@@ -316,16 +367,14 @@ namespace Game.Interface
                 var bottomRight = vertices[vertexIndex + 2];
                 var center = (topLeft + bottomRight) / 2f;
 
-                var startTime = typingInfo.typingTimes[index];
+                var charTypingInfo = typingInfo.typingTimes[index];
                 
                 float scale = 0;
                 
-                if (time > startTime)
-                { 
-                    var endTime = typingInfo.typingTimes[index + 1];
-                    
-                    if (time < endTime)
-                        scale = (time - startTime) / (endTime - startTime);
+                if (time > charTypingInfo.start)
+                {
+                    if (time < charTypingInfo.start + charTypingInfo.length)
+                        scale = (time - charTypingInfo.start) / charTypingInfo.length;
                     else
                         scale = 1;
                 }

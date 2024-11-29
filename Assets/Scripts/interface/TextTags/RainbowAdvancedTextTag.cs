@@ -10,10 +10,10 @@ namespace Game.Interface.Tags
         public float scale = 1f;
         public float speed = 1f;
         
-        public override void LoadArgs(string raw, IReadOnlyDictionary<string, string> args)
+        public override void LoadArgs(string raw, AdvancedText.Args  args)
         {
-            scale = args.TryGetValue("scale", out var arg1) ? float.Parse(arg1, CultureInfo.InvariantCulture) : scale;
-            speed = args.TryGetValue("speed", out var arg2) ? float.Parse(arg2, CultureInfo.InvariantCulture) : speed;
+            scale = args.GetFloat("scale", scale);
+            speed = args.GetFloat("speed", speed);
         }
 
         public override void ApplyTextEffects(AdvancedText advancedText, TMP_TextInfo text)

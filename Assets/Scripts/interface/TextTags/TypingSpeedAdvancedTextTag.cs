@@ -8,9 +8,9 @@ namespace Game.Interface.Tags
     {
         public float speed = 1f;
         
-        public override void LoadArgs(string raw, IReadOnlyDictionary<string, string> args)
+        public override void LoadArgs(string raw, AdvancedText.Args args)
         {
-            speed = args.TryGetValue("speed", out var speedStr) ? float.Parse(speedStr, CultureInfo.InvariantCulture) : speed;
+            speed = args.GetFloat("speed", speed);
         }
 
         public override void ApplyTextEffects(AdvancedText advancedText, TMP_TextInfo text)

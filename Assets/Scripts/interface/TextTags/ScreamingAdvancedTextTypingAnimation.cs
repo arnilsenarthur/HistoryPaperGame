@@ -21,16 +21,14 @@ namespace Game.Interface.Tags
             var bottomRight = vertices[vertexIndex + 2];
             var center = (topLeft + bottomRight) / 2f;
 
-            var startTime = typingInfo.typingTimes[index];
+            var charTypingInfo = typingInfo.typingTimes[index];
                 
             float dt = 0;
                 
-            if (time > startTime)
-            { 
-                var endTime = typingInfo.typingTimes[index + 1];
-                    
-                if (time < endTime)
-                    dt = (time - startTime) / (endTime - startTime);
+            if (time > charTypingInfo.start)
+            {
+                if (time < charTypingInfo.start + charTypingInfo.length)
+                    dt = (time - charTypingInfo.start) / charTypingInfo.length;
                 else
                     dt = 1;
             }

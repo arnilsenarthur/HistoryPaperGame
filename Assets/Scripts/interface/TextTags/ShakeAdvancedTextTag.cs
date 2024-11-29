@@ -6,7 +6,7 @@ namespace Game.Interface.Tags
 {
     public class ShakeAdvancedTextTag : AdvancedText.ClosableTag
     {
-        public override void LoadArgs(string raw, IReadOnlyDictionary<string, string> args)
+        public override void LoadArgs(string raw, AdvancedText.Args args)
         {
             
         }
@@ -32,6 +32,16 @@ namespace Game.Interface.Tags
                 vertices[vertexIndex + 2] += offset;
                 vertices[vertexIndex + 3] += offset;
             }
+        }
+
+        public override string GetOpeningPrefix()
+        {
+            return "<color=red>";
+        }
+
+        public override string GetClosingPrefix()
+        {
+            return "</color>";
         }
     }   
 }
