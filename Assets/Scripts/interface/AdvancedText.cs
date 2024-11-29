@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace Game.Interface
 {
+    [RequireComponent(typeof(TMP_Text))]
     [ExecuteInEditMode]
     public class AdvancedText : MonoBehaviour
     {
@@ -226,7 +227,7 @@ namespace Game.Interface
         }
         #endregion
 
-        #region Animation
+        #region Typing Animations
         private class StandardTypingAnimation : ITypingAnimation
         {
             public void ApplyTypingAnimation(AdvancedText advancedText, TMP_TextInfo text, TypingInfo typingInfo, int index)
@@ -274,35 +275,38 @@ namespace Game.Interface
         #endregion
         
         #region Inspector Fields
-        public TMP_Text text;
-        #endregion
-
         [Range(0f, 10f)]
         public float time = 1f;
-        
         [Range(0f, 10f)]
         public float typingSpeed = 1f;
+        #endregion
         
         private AdvancedTextPreprocessor _textPreprocessor;
         private ITypingAnimation _anim;
+        private TMP_Text _text;
 
         private void OnEnable()
         {
+            _text = GetComponent<TMP_Text>();
+            
+            if (_text == null)
+                return;
+            
             _anim = new StandardTypingAnimation();
-            text.textPreprocessor = _textPreprocessor = new AdvancedTextPreprocessor();
+            _text.textPreprocessor = _textPreprocessor = new AdvancedTextPreprocessor();
         }
         
         public void Update()
         {
-            if (text == null)
+            if (_text == null)
                 return;
             
-            text.ForceMeshUpdate();
+            _text.ForceMeshUpdate();
 
             if(Application.isPlaying)
                 time += Time.deltaTime * typingSpeed;
             
-            var textInfo = text.textInfo;
+            var textInfo = _text.textInfo;
             var characterCount = textInfo.characterCount;
             
             for (var i = 0; i < characterCount; i++)
@@ -317,9 +321,9 @@ namespace Game.Interface
 
             foreach (var tg in _textPreprocessor.tags)
                 if (tg is ClosableTag ctg)
-                    ctg.ApplyTextEffects(this, text.textInfo);
+                    ctg.ApplyTextEffects(this, _text.textInfo);
 
-            text.UpdateVertexData();    
+            _text.UpdateVertexData();    
         }
     }
 }
