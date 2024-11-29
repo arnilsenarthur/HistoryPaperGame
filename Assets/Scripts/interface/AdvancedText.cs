@@ -108,10 +108,11 @@ namespace Game.Interface
         #region Internal Classes
         private class AdvancedTextPreprocessor : ITextPreprocessor
         {
-            private const float TypingTimeDefault = 0.05f;
+            private const float TypingTimeDefault = 0.02f;
             private const float TypingTimeWhiteSpace = TypingTimeDefault * 2f;
-            private const float TypingTimePunctuation = TypingTimeDefault * 5f;
-            private const float TypingTimeLineBreak = TypingTimeDefault * 10f;
+            private const float TypingTimePunctuation = TypingTimeDefault * 8f;
+            private const float TypingTimePunctuationLong = TypingTimePunctuation * 3f;
+            private const float TypingTimeLineBreak = TypingTimePunctuationLong * 2f;
             
             private delegate Tag Factory();
             private static readonly Regex _TagRegex = new(@"\<(?<tag_name>\/?\w+)(?:\s*(?<arg_name>\w*)=(?:""(?<arg_value>[^""]*)""|(?<arg_value>[^\s>]*)))*\>");
@@ -132,6 +133,7 @@ namespace Game.Interface
                 _tags["pause"] = () => new PauseAdvancedTextTag();
                 _tags["slow"] = () => new TypingSpeedAdvancedTextTag{speed = 0.25f};
                 _tags["fast"] = () => new TypingSpeedAdvancedTextTag{speed = 4f};
+                _tags["wave"] = () => new WaveAdvancedTextTag();
             }
 
             public string PreprocessText(string text)
@@ -160,20 +162,19 @@ namespace Game.Interface
                 {
                     var typingAnimation = default(ITypingAnimation);
                     var multiplier = 1f;
-                    var typingTime = _GetTimeForChar(c);
-                                    
+                           
                     for (var j = 0; j < tagsToClose.Count; j++)
                     {
                         var ctg = tagsToClose.ToArray()[j];
                         typingAnimation = ctg.GetTypingAnimation() ?? typingAnimation;
                         multiplier *= ctg.GetTypingSpeedMultiplier();
                     }
-
+                    
+                    var iMultiplier = 1f / multiplier;
                     var start = lastTime + pauseToAdd;
-                    var length = typingTime * 1f / multiplier;
-                    lastTime = start + length;
+                    lastTime = start + _GetTimeForChar(c) * iMultiplier;
                                     
-                    typingTimes.Add(new CharTypingInfo{start = start, length = length});
+                    typingTimes.Add(new CharTypingInfo{start = start, length = TypingTimeDefault * iMultiplier});
                     typingAnimations.Add(typingAnimation);
                     typingMaxTime = Math.Max(typingMaxTime, lastTime);
                 }
@@ -190,7 +191,7 @@ namespace Game.Interface
 
                         return;
                     }
-                    
+            
                     //For now, don't check if the tag is valid or not (the name, args, and if it's closable)  
                     offset -= tag.Length;
                 }
@@ -337,10 +338,11 @@ namespace Game.Interface
             {
                 return c switch
                 {
-                    '.' => TypingTimePunctuation,
+                    '.' => TypingTimePunctuationLong,
                     ',' => TypingTimePunctuation,
                     ';' => TypingTimePunctuation,
                     ':' => TypingTimePunctuation,
+                    '—' => TypingTimePunctuationLong,
                     ' ' => TypingTimeWhiteSpace,
                     '\n' => TypingTimeLineBreak,
                     _ => TypingTimeDefault

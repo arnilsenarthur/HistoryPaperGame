@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Globalization;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 namespace Game.Interface.Tags
@@ -36,27 +34,7 @@ namespace Game.Interface.Tags
                 colors[vertexIndex + 3] = _SampleColor(vertices[vertexIndex + 3]);
             }
         }
-
-        public override string GetClosingPrefix()
-        {
-            return "😊";
-        }
-
-        public override string GetOpeningPrefix()
-        {
-            return "😊";
-        }
-
-        public override string GetClosingSuffix()
-        {
-            return "😊";
-        }
         
-        public override string GetOpeningSuffix()
-        {
-            return "😊";
-        }
-
         private Color32 _SampleColor(Vector2 position)
         {
             return Color.HSVToRGB(Mathf.Repeat(Time.time * speed * 0.25f + position.x * scale * 0.01f, 1f), 1f, 1f);
@@ -65,11 +43,6 @@ namespace Game.Interface.Tags
         public override AdvancedText.ITypingAnimation GetTypingAnimation()
         {
             return new ScreamingAdvancedTextTypingAnimation();
-        }
-
-        public override float GetTypingSpeedMultiplier()
-        {
-            return 0.1f;
         }
     }
 }
