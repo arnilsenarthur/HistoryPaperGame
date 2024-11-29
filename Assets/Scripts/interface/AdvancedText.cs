@@ -426,26 +426,28 @@ namespace Game.Interface
             
             _text.ForceMeshUpdate();
 
-            if(Application.isPlaying)
-                time += Time.deltaTime * typingSpeed;
             
             //Tags
             foreach (var tg in _textPreprocessor.tags)
                 if (tg is ClosableTag ctg)
                     ctg.ApplyTextEffects(this, _text.textInfo);
-            
+           
             //Typing Animation
-            var textInfo = _text.textInfo;
-            var characterCount = textInfo.characterCount;
-            
-            for (var i = 0; i < characterCount; i++)
+            if (Application.isPlaying)
             {
-                var charInfo = textInfo.characterInfo[i];
-                if (!charInfo.isVisible)
-                    continue;
-                
-                var anim = _textPreprocessor.typingInfo.typingAnimations[i] ?? _anim;
-                anim.ApplyTypingAnimation(this, textInfo, _textPreprocessor.typingInfo, i);
+                time += Time.deltaTime * typingSpeed;
+                var textInfo = _text.textInfo;
+                var characterCount = textInfo.characterCount;
+
+                for (var i = 0; i < characterCount; i++)
+                {
+                    var charInfo = textInfo.characterInfo[i];
+                    if (!charInfo.isVisible)
+                        continue;
+
+                    var anim = _textPreprocessor.typingInfo.typingAnimations[i] ?? _anim;
+                    anim.ApplyTypingAnimation(this, textInfo, _textPreprocessor.typingInfo, i);
+                }
             }
 
             _text.UpdateVertexData();    
