@@ -37,9 +37,39 @@ namespace Game.Interface.Tags
             }
         }
 
+        public override string GetClosingPrefix()
+        {
+            return "😊";
+        }
+
+        public override string GetOpeningPrefix()
+        {
+            return "😊";
+        }
+
+        public override string GetClosingSuffix()
+        {
+            return "😊";
+        }
+        
+        public override string GetOpeningSuffix()
+        {
+            return "😊";
+        }
+
         private Color32 _SampleColor(Vector2 position)
         {
             return Color.HSVToRGB(Mathf.Repeat(Time.time * speed * 0.25f + position.x * scale * 0.01f, 1f), 1f, 1f);
+        }
+        
+        public override AdvancedText.ITypingAnimation GetTypingAnimation()
+        {
+            return new ScreamingAdvancedTextTypingAnimation();
+        }
+
+        public override float GetTypingSpeedMultiplier()
+        {
+            return 0.1f;
         }
     }
 }

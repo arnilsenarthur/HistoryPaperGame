@@ -18,11 +18,6 @@ namespace Game.Interface.Tags
             
         }
 
-        public override AdvancedText.ITypingAnimation GetTypingAnimation()
-        {
-            return new ScreamingAdvancedTextTypingAnimation();
-        }
-
         public override float GetTypingSpeedMultiplier()
         {
             return speed;

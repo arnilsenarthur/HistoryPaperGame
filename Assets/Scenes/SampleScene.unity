@@ -169,7 +169,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2d4eb2b68ab12c44b532dbd5f67eabb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  text: {fileID: 12425875}
   time: 0
   typingSpeed: 1
 --- !u!114 &12425875
@@ -192,7 +191,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\U0001F44C[slow]mao \U0001F44C gay[:slow] \U0001F44C"
+  m_text: "oi <b>player</b>, \U0001F60A\U0001F60A tudo bem? <pause time=3> \n<rainbow>seus
+    a<shake>mig</shake>os?</rainbow> est\xE3o bem tambem?"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f4078eb7237b2a240a5424e5470da5b3, type: 2}
   m_sharedMaterial: {fileID: -1509876392339192390, guid: f4078eb7237b2a240a5424e5470da5b3, type: 2}
@@ -421,7 +421,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2d4eb2b68ab12c44b532dbd5f67eabb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  text: {fileID: 114290373}
   time: 10
   typingSpeed: 1
 --- !u!1 &588638465
