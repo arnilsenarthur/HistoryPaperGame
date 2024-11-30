@@ -7,7 +7,7 @@ namespace Game.Interface.Tags
     {
         public void ApplyTypingAnimation(AdvancedText advancedText, TMP_TextInfo text, AdvancedText.TypingInfo typingInfo, int index)
         {
-            var time = advancedText.time;
+            var time = advancedText.typingTime;
             var textInfo = text.characterInfo;
             
             var charInfo = textInfo[index];

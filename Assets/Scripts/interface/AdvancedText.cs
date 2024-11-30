@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Game.Interface.Tags;
+using Game.Interface.Tags.Animations;
 using TMPro;
 using UnityEngine;
 
@@ -111,8 +112,8 @@ namespace Game.Interface
             private const float TypingTimeDefault = 0.02f;
             private const float TypingTimeWhiteSpace = TypingTimeDefault * 2f;
             private const float TypingTimePunctuation = TypingTimeDefault * 8f;
-            private const float TypingTimePunctuationLong = TypingTimePunctuation * 3f;
-            private const float TypingTimeLineBreak = TypingTimePunctuationLong * 2f;
+            private const float TypingTimePunctuationLong = TypingTimePunctuation * 2f;
+            private const float TypingTimeLineBreak = TypingTimePunctuationLong * 1.5f;
             
             private delegate Tag Factory();
             private static readonly Regex _TagRegex = new(@"\<(?<tag_name>\/?\w+)(?:\s*(?<arg_name>\w*)=(?:""(?<arg_value>[^""]*)""|(?<arg_value>[^\s>]*)))*\>");
@@ -129,11 +130,14 @@ namespace Game.Interface
             public AdvancedTextPreprocessor()
             {
                 _tags["rainbow"] = () => new RainbowAdvancedTextTag();
-                _tags["shake"] = () => new ShakeAdvancedTextTag();
                 _tags["pause"] = () => new PauseAdvancedTextTag();
                 _tags["slow"] = () => new TypingSpeedAdvancedTextTag{speed = 0.25f};
-                _tags["fast"] = () => new TypingSpeedAdvancedTextTag{speed = 4f};
+                _tags["fast"] = () => new TypingSpeedAdvancedTextTag{speed = 2f};
+                
+                //Animations
+                _tags["shake"] = () => new ShakeAdvancedTextTag { speed = 10f, strength = 3f, randomness = 0.25f };
                 _tags["wave"] = () => new WaveAdvancedTextTag();
+                _tags["tremble"] = () => new ShakeAdvancedTextTag  { speed = 50f, strength = 1f, randomness = 1f };
             }
 
             public string PreprocessText(string text)
@@ -173,6 +177,7 @@ namespace Game.Interface
                     var iMultiplier = 1f / multiplier;
                     var start = lastTime + pauseToAdd;
                     lastTime = start + _GetTimeForChar(c) * iMultiplier;
+                    pauseToAdd = 0f;
                                     
                     typingTimes.Add(new CharTypingInfo{start = start, length = TypingTimeDefault * iMultiplier});
                     typingAnimations.Add(typingAnimation);
@@ -356,7 +361,7 @@ namespace Game.Interface
         {
             public void ApplyTypingAnimation(AdvancedText advancedText, TMP_TextInfo text, TypingInfo typingInfo, int index)
             {
-                var time = advancedText.time;
+                var time = advancedText.typingTime;
                 var textInfo = text.characterInfo;
             
                 var charInfo = textInfo[index];
@@ -397,7 +402,8 @@ namespace Game.Interface
         #endregion
         
         #region Inspector Fields
-        public float time = 1f;
+        public bool animateTyping = true;
+        public float typingTime = 1f;
         public float typingSpeed = 1f;
         #endregion
 
@@ -433,9 +439,9 @@ namespace Game.Interface
                     ctg.ApplyTextEffects(this, _text.textInfo);
            
             //Typing Animation
-            if (Application.isPlaying)
+            if (Application.isPlaying && animateTyping)
             {
-                time += Time.deltaTime * typingSpeed;
+                typingTime += Time.deltaTime * typingSpeed;
                 var textInfo = _text.textInfo;
                 var characterCount = textInfo.characterCount;
 
@@ -463,12 +469,20 @@ namespace Game.Interface
         {
             EditorGUI.BeginChangeCheck();
             var advancedText = (AdvancedText) target;
-            advancedText.time = EditorGUILayout.Slider("Time", advancedText.time, 0f, advancedText.TotalTypingTime);
-            advancedText.typingSpeed = EditorGUILayout.Slider("Typing Speed", advancedText.typingSpeed, 0f, 10f);
+            advancedText.animateTyping = EditorGUILayout.Toggle("Animate Typing", advancedText.animateTyping);
+            if (advancedText.animateTyping)
+            {
+                advancedText.typingTime = EditorGUILayout.Slider("Typing Time", advancedText.typingTime, 0f,
+                    advancedText.TotalTypingTime);
+                advancedText.typingSpeed = EditorGUILayout.Slider("Typing Speed", advancedText.typingSpeed, 0f, 10f);
+                
+                EditorGUILayout.HelpBox($"Total Typing Time: {advancedText.TotalTypingTime:0.000}s", MessageType.Info);
+            }
+
             if (EditorGUI.EndChangeCheck())
                 EditorUtility.SetDirty(advancedText);
             
-            EditorGUILayout.HelpBox($"Total Typing Time: {advancedText.TotalTypingTime:0.000}s", MessageType.Info);
+            
         }
     }
     #endif
