@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Game.Interface.Tags;
-using Game.Interface.Tags.Animations;
 using TMPro;
 using UnityEngine;
 
@@ -131,8 +130,8 @@ namespace Game.Interface
             {
                 _tags["rainbow"] = () => new RainbowAdvancedTextTag();
                 _tags["pause"] = () => new PauseAdvancedTextTag();
-                _tags["slow"] = () => new TypingSpeedAdvancedTextTag{speed = 0.25f};
-                _tags["fast"] = () => new TypingSpeedAdvancedTextTag{speed = 2f};
+                _tags["slow"] = () => new SpeedAdvancedTextTag{speed = 0.25f};
+                _tags["fast"] = () => new SpeedAdvancedTextTag{speed = 2f};
                 
                 //Animations
                 _tags["shake"] = () => new ShakeAdvancedTextTag { speed = 10f, strength = 3f, randomness = 0.25f };

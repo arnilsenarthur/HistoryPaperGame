@@ -4,7 +4,7 @@ using TMPro;
 
 namespace Game.Interface.Tags
 {
-    public class TypingSpeedAdvancedTextTag : AdvancedText.ClosableTag
+    public class SpeedAdvancedTextTag : AdvancedText.ClosableTag
     {
         public float speed = 1f;
         

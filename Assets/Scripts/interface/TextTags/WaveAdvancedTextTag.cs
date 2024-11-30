@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Game.Interface.Tags.Animations
+namespace Game.Interface.Tags
 {
     public class WaveAdvancedTextTag : AdvancedText.ClosableTag
     {
@@ -39,7 +39,7 @@ namespace Game.Interface.Tags.Animations
 
         public override AdvancedText.ITypingAnimation GetTypingAnimation()
         {
-            return new ScreamingAdvancedTextTypingAnimation();
+            return new StrongAdvancedTextTypingAnimation();
         }
     }
 }

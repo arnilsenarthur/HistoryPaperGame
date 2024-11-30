@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Globalization;
-
-namespace Game.Interface.Tags
+﻿namespace Game.Interface.Tags
 {
     public class PauseAdvancedTextTag : AdvancedText.Tag
     {

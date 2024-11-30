@@ -1,7 +1,7 @@
 ﻿using TMPro;
 using UnityEngine;
 
-namespace Game.Interface.Tags.Animations
+namespace Game.Interface.Tags
 {
     public class ShakeAdvancedTextTag : AdvancedText.ClosableTag
     {

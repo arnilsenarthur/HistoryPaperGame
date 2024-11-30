@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Interface.Tags
 {
-    public class ScreamingAdvancedTextTypingAnimation : AdvancedText.ITypingAnimation
+    public class StrongAdvancedTextTypingAnimation : AdvancedText.ITypingAnimation
     {
         public void ApplyTypingAnimation(AdvancedText advancedText, TMP_TextInfo text, AdvancedText.TypingInfo typingInfo, int index)
         {
@@ -32,7 +32,6 @@ namespace Game.Interface.Tags
                 else
                     dt = 1;
             }
-            
             
             var scale = Mathf.Lerp(1.5f, 1f, dt);
                 
